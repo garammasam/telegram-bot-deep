@@ -512,46 +512,15 @@ export class AgentManager {
       return false;
     }
 
-    // Opinion-related words that should be checked with Islamic context
-    const opinionWords = [
-      // English
-      'opinion', 'view', 'think', 'about', 'regarding',
-      'what about', 'thoughts on', 'tell me about',
-      // Malay
-      'pendapat', 'pandangan', 'fikir', 'pasal', 'tentang',
-      'berkenaan', 'mengenai', 'apa kata'
-    ];
-
-    // If it contains opinion words, only process if there's Islamic context
-    if (opinionWords.some(word => lowerText.includes(word))) {
-      return this.hasIslamicContext(lowerText);
+    // Get the OpinionAgent instance
+    const opinionAgent = this.agents.get('opinion')?.agent as OpinionAgent;
+    if (!opinionAgent) {
+      return false;
     }
 
-    // Complex Islamic query triggers that need full analysis
-    const complexTriggers = [
-      // Islamic terms
-      'hukum', 'fatwa', 'syariah', 'shariah', 'fiqh', 'hadith',
-      'sunnah', 'quran', 'dalil', 'mazhab', 'ibadah', 'solat',
-      'zakat', 'puasa', 'halal', 'haram', 'islam', 'muslim',
-      'doa', 'sembahyang', 'sedekah', 'aurat', 'wudhu', 'wudu',
-      'nabi', 'rasul', 'allah', 'syahadah', 'syahadat',
-      
-      // Question starters (English)
-      'what is the ruling', 'what does islam say', 'is it permissible',
-      'islamic view', 'in islam', 'religious', 'prophet',
-      
-      // Question starters (Malay)
-      'apa hukum', 'boleh tak', 'dalam islam', 'cara islam',
-      'pandangan islam', 'hukum islam', 'nabi muhammad'
-    ];
-
-    // Check for complex Islamic triggers
-    const hasComplexTrigger = complexTriggers.some(trigger => lowerText.includes(trigger));
-    
-    // Only consider question marks if there's some Islamic context
-    const isQuestion = lowerText.includes('?') && this.hasIslamicContext(lowerText);
-
-    return hasComplexTrigger || isQuestion;
+    // Check if the text contains any of the keywords from OpinionAgent
+    const keywords = opinionAgent.getKeywords();
+    return keywords.some(keyword => lowerText.includes(keyword.toLowerCase()));
   }
 
   private hasIslamicContext(text: string): boolean {

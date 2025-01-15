@@ -38,7 +38,7 @@ abstract class BaseIslamicAgent {
 
   abstract setupHandlers(): Promise<void>;
   protected abstract getSystemPrompt(): string;
-  protected abstract getKeywords(): string[];
+  public abstract getKeywords(): string[];
   protected abstract getTopics(): string[];
 
   public async shouldRespond(message: string): Promise<boolean> {
@@ -203,7 +203,7 @@ export class FatwaAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       'fatwa', 'ruling', 'halal', 'haram', 'permissible', 'forbidden',
       'islamic law', 'shariah', 'syariah', 'hukum', 'dalil',
@@ -266,7 +266,7 @@ export class MazhabAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       'mazhab', 'shafi\'i', 'hanafi', 'maliki', 'hanbali',
       'school of thought', 'imam shafi\'i', 'fiqh', 'usul fiqh',
@@ -327,7 +327,7 @@ export class JakimAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       'jakim', 'halal certification', 'malaysian islamic development',
       'jabatan kemajuan islam malaysia', 'halal logo', 'halal status',
@@ -389,7 +389,7 @@ export class MalaysianFatwaAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       'malaysian fatwa', 'state fatwa', 'national fatwa council',
       'majlis fatwa', 'mufti', 'malaysian islamic ruling',
@@ -450,7 +450,7 @@ export class IbadhahAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       'ibadah', 'worship', 'prayer', 'solat', 'puasa', 'fasting',
       'zakat', 'hajj', 'umrah', 'malaysian customs', 'adat',
@@ -518,7 +518,7 @@ export class OpinionAgent extends BaseIslamicAgent {
     });
   }
 
-  protected getKeywords(): string[] {
+  public getKeywords(): string[] {
     return [
       // English opinion keywords
       'opinion', 'view', 'perspective', 'think', 'consider',
