@@ -9,7 +9,7 @@ const agentManager = new AgentManager();
 agentManager.startAllAgents().catch(console.error);
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).send('OK');
 });
 

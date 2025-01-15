@@ -169,10 +169,17 @@ export class FatwaAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('fatwa', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /fatwa command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });
@@ -225,10 +232,17 @@ export class MazhabAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('mazhab', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /mazhab command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });
@@ -279,10 +293,17 @@ export class JakimAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('jakim', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /jakim command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });
@@ -334,10 +355,17 @@ export class MalaysianFatwaAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('malaysianfatwa', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /malaysianfatwa command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });
@@ -388,10 +416,17 @@ export class IbadhahAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('ibadah', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /ibadah command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });
@@ -449,10 +484,17 @@ export class OpinionAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
     this.bot.command('opinion', async (ctx) => {
       const question = ctx.match;
+      
       if (!question) {
         await ctx.reply('Please provide a question after the /opinion command.');
         return;
       }
+
+      if (!ctx.chat?.id) {
+        await ctx.reply('This command can only be used in a group chat.');
+        return;
+      }
+
       const response = await this.generateResponse(question);
       await this.replyWithFormattedResponse(ctx, response);
     });

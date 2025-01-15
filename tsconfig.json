@@ -9,7 +9,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

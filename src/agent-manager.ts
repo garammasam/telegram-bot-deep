@@ -245,23 +245,6 @@ export class AgentManager {
     return cleaned.trim();
   }
 
-  private getAgentTitle(name: string): string {
-    switch (name) {
-      case 'fatwa':
-        return 'Fatwa Perspective';
-      case 'mazhab':
-        return 'Mazhab Analysis';
-      case 'jakim':
-        return 'JAKIM Guidelines';
-      case 'malaysianfatwa':
-        return 'Malaysian Fatwa Council View';
-      case 'ibadah':
-        return 'Islamic Practice Context';
-      default:
-        return name.charAt(0).toUpperCase() + name.slice(1);
-    }
-  }
-
   private splitResponse(text: string): string[] {
     const MAX_LENGTH = 4000; // Leave some room for formatting
     const chunks: string[] = [];
