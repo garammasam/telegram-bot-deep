@@ -19,7 +19,7 @@ interface DeepseekMessage {
   content: string;
 }
 
-abstract class BaseIslamicAgent {
+export abstract class BaseIslamicAgent {
   protected bot: Bot;
   protected config: AgentConfig;
   protected deepseekClient;

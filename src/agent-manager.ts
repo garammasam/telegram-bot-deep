@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
-import { Bot } from 'grammy';
-import { FatwaAgent, MazhabAgent, JakimAgent, MalaysianFatwaAgent, IbadhahAgent, OpinionAgent } from './islamic-agents';
+import { Bot, Context } from 'grammy';
+import { FatwaAgent, MazhabAgent, JakimAgent, MalaysianFatwaAgent, IbadhahAgent, OpinionAgent, BaseIslamicAgent } from './islamic-agents';
 
 // Load environment variables
 config();
@@ -117,20 +117,32 @@ export class AgentManager {
 
         // Get the full context of the question
         let questionText = ctx.message.text;
-        if (isReply && ctx.message.reply_to_message?.text) {
-          // If it's a reply and mentions the bot, include the replied message
-          const isBotMentionedInReply = this.isBotMentioned(questionText);
-          if (isBotMentionedInReply) {
-            questionText = `${ctx.message.reply_to_message.text}\n\nFollow-up: ${questionText}`;
+        
+        // Handle replies to bot's messages
+        if (isReply) {
+          const repliedMessage = ctx.message.reply_to_message;
+          const isBotMessage = repliedMessage?.from?.id === ctx.me?.id;
+          const isBotMentioned = this.isBotMentioned(questionText);
+
+          if (isBotMessage || isBotMentioned) {
+            // Include the replied message for context
+            if (repliedMessage?.text) {
+              questionText = `Context: ${repliedMessage.text}\n\nFollow-up: ${questionText}`;
+            }
             console.log('Processing as follow-up question:', questionText);
+          } else {
+            // Not a reply to bot's message and bot not mentioned, ignore
+            return;
           }
         }
 
         const isMentioned = this.isBotMentioned(questionText);
         const isCommand = questionText.startsWith('/');
+        const isGetKeywords = questionText.toLowerCase().includes('getkeywords');
 
         console.log('Is mentioned:', isMentioned);
         console.log('Is command:', isCommand);
+        console.log('Is getKeywords:', isGetKeywords);
 
         // Handle commands separately
         if (isCommand) {
@@ -141,7 +153,7 @@ export class AgentManager {
         }
 
         // Handle mentions and natural language queries
-        if (isMentioned || this.isOpinionQuery(questionText)) {
+        if (isMentioned || isReply) {
           console.log('Processing message...');
           const question = isMentioned ? this.removeBotMention(questionText) : questionText;
           console.log('Cleaned question:', question);
@@ -165,28 +177,56 @@ export class AgentManager {
             return;
           }
 
-          // Process as opinion query for complex questions
-          console.log('Processing opinion query...');
-          const opinionAgent = this.agents.get('opinion')?.agent as OpinionAgent;
-          if (opinionAgent) {
-            try {
-              console.log('Requesting comprehensive opinion from OpinionAgent...');
-              const response = await opinionAgent.generateResponse(question);
-              console.log('Received response from OpinionAgent');
-              
-              const formattedResponse = this.formatResponseForTelegram(response);
-              const chunks = this.splitResponse(formattedResponse);
-              
-              for (const chunk of chunks) {
-                await ctx.reply(chunk, {
-                  reply_to_message_id: ctx.message.message_id,
-                  parse_mode: 'HTML'
-                });
+          // Process with appropriate agent
+          if (isGetKeywords) {
+            // Use OpinionAgent for comprehensive analysis
+            console.log('Processing with OpinionAgent (getKeywords requested)...');
+            const opinionAgent = this.agents.get('opinion')?.agent as OpinionAgent;
+            if (opinionAgent) {
+              try {
+                const response = await opinionAgent.generateResponse(question);
+                await this.replyWithFormattedResponse(ctx, response);
+              } catch (error) {
+                console.error('Error generating opinion:', error);
+                await ctx.reply(
+                  'I apologize, but I encountered an error while processing your question. Please try again later.',
+                  { reply_to_message_id: ctx.message.message_id }
+                );
               }
-            } catch (error) {
-              console.error('Error generating opinion:', error);
+            }
+          } else {
+            // Use the most relevant specialized agent
+            console.log('Finding most relevant specialized agent...');
+            let bestAgent: BaseIslamicAgent | null = null;
+            let highestRelevance = 0;
+
+            for (const [name, info] of this.agents) {
+              if (name === 'opinion') continue; // Skip OpinionAgent for regular queries
+              
+              const agent = info.agent;
+              const relevanceScore = await agent.shouldRespond(question);
+              if (typeof relevanceScore === 'number' && relevanceScore > highestRelevance) {
+                highestRelevance = relevanceScore;
+                bestAgent = agent;
+              }
+            }
+
+            if (bestAgent) {
+              try {
+                const response = await bestAgent.generateResponse(question);
+                await this.replyWithFormattedResponse(ctx, response);
+              } catch (error) {
+                console.error('Error generating response:', error);
+                await ctx.reply(
+                  'I apologize, but I encountered an error while processing your question. Please try again later.',
+                  { reply_to_message_id: ctx.message.message_id }
+                );
+              }
+            } else {
+              // No agent found relevant enough, use default response
               await ctx.reply(
-                'I apologize, but I encountered an error while processing your question. Please try again later.',
+                'I\'m not sure I understand your question. Could you please rephrase it or use one of my commands?\n\n' +
+                'Use /help to see available commands.',
                 { reply_to_message_id: ctx.message.message_id }
               );
             }
@@ -692,5 +732,22 @@ I'll analyze your question and provide a comprehensive response considering vari
     }
 
     return { isSimple: false };
+  }
+
+  private async replyWithFormattedResponse(ctx: Context, response: string) {
+    try {
+      const formattedResponse = this.formatResponseForTelegram(response);
+      const chunks = this.splitResponse(formattedResponse);
+      
+      for (const chunk of chunks) {
+        await ctx.reply(chunk, {
+          reply_to_message_id: ctx.message?.message_id,
+          parse_mode: 'HTML'
+        });
+      }
+    } catch (error) {
+      console.error('Error sending formatted response:', error);
+      await ctx.reply('I apologize, but I encountered an error while formatting the response.');
+    }
   }
 } 
