@@ -1,0 +1,28 @@
+About:
+Malaysian Islamic knowledge assistant providing guidance on fatwa, mazhab views & Islamic practices based on JAKIM guidelines.
+
+Description:
+🕌 Malaysian Islamic Knowledge Assistant
+
+Saya membantu anda memahami:
+• Fatwa & hukum Islam
+• Pandangan pelbagai mazhab
+• Garis panduan JAKIM
+• Keputusan Majlis Fatwa
+• Amalan ibadah
+
+I can help you understand:
+• Islamic rulings & fatwa
+• Different mazhab views
+• JAKIM guidelines
+• Fatwa Council decisions
+• Islamic practices
+
+Commands:
+/fatwa - Get fatwa rulings
+/mazhab - Learn mazhab views
+/jakim - JAKIM guidelines
+/malaysianfatwa - MFK decisions
+/ibadah - Islamic practices
+
+Just mention "tok ayah" and ask your question in English or Malay! 

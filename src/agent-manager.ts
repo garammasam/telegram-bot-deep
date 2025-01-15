@@ -469,45 +469,79 @@ export class AgentManager {
       return false;
     }
 
-    // Simple questions that don't need complex analysis
-    const simpleQuestions = [
-      // Bot-related
+    // Simple questions and casual conversations that don't need complex analysis
+    const simplePatterns = [
+      // Greetings and time-based
+      'selamat', 'good', 'pagi', 'petang', 'malam', 'morning', 'evening', 'night',
+      // Status checks
       'are you there', 'you there', 'ada tak', 'ada ke',
       'you ok', 'ok tak', 'working', 'can you hear',
-      // Basic greetings and acknowledgments
-      'good morning', 'good evening', 'good night',
-      'selamat pagi', 'selamat petang', 'selamat malam',
+      // Basic interactions
       'bye', 'goodbye', 'see you', 'jumpa lagi',
-      'ok', 'okay', 'alright', 'baik', 'faham'
+      'ok', 'okay', 'alright', 'baik', 'faham',
+      // Casual questions
+      'how are you', 'apa khabar', 'what are you doing', 'busy',
+      'where are you', 'bila', 'when', 'kenapa', 'why'
     ];
 
-    if (simpleQuestions.some(q => lowerText.includes(q))) {
-      return false;
+    // Check if it's a simple pattern without Islamic context
+    if (simplePatterns.some(pattern => lowerText.includes(pattern))) {
+      // Only return false if there are no Islamic terms in the question
+      const hasIslamicContext = this.hasIslamicContext(lowerText);
+      if (!hasIslamicContext) {
+        return false;
+      }
     }
 
-    // Complex query triggers that need full analysis
+    // Complex Islamic query triggers that need full analysis
     const complexTriggers = [
       // Islamic terms
       'hukum', 'fatwa', 'syariah', 'shariah', 'fiqh', 'hadith',
       'sunnah', 'quran', 'dalil', 'mazhab', 'ibadah', 'solat',
-      'zakat', 'puasa', 'halal', 'haram',
+      'zakat', 'puasa', 'halal', 'haram', 'islam', 'muslim',
+      'doa', 'sembahyang', 'sedekah', 'aurat', 'wudhu', 'wudu',
+      'nabi', 'rasul', 'allah', 'syahadah', 'syahadat',
       
       // Question starters (English)
-      'what is the ruling', 'what does islam say', 'how do i',
-      'can you explain', 'tell me about', 'what are the',
-      'is it permissible', 'why do we', 'how should',
+      'what is the ruling', 'what does islam say', 'is it permissible',
+      'islamic view', 'in islam', 'religious', 'prophet',
       
       // Question starters (Malay)
-      'apa hukum', 'boleh tak', 'macam mana nak',
-      'kenapa kita', 'mengapa perlu', 'adakah boleh',
-      'bagaimana cara', 'apa pandangan', 'boleh terangkan'
+      'apa hukum', 'boleh tak', 'dalam islam', 'cara islam',
+      'pandangan islam', 'hukum islam', 'nabi muhammad'
     ];
 
-    // Check for complex triggers or question marks (indicating a detailed question)
+    // Check for complex Islamic triggers
     const hasComplexTrigger = complexTriggers.some(trigger => lowerText.includes(trigger));
-    const isQuestion = lowerText.includes('?');
+    
+    // Only consider question marks if there's some Islamic context
+    const isQuestion = lowerText.includes('?') && this.hasIslamicContext(lowerText);
 
     return hasComplexTrigger || isQuestion;
+  }
+
+  private hasIslamicContext(text: string): boolean {
+    const islamicTerms = [
+      // Basic Islamic terms
+      'islam', 'muslim', 'allah', 'nabi', 'rasul',
+      'hukum', 'fatwa', 'syariah', 'shariah', 'fiqh',
+      'hadith', 'sunnah', 'quran', 'dalil', 'mazhab',
+      
+      // Practices
+      'solat', 'sembahyang', 'puasa', 'zakat', 'haji',
+      'umrah', 'doa', 'sedekah', 'ibadah', 'wudhu',
+      'wudu', 'aurat', 'halal', 'haram',
+      
+      // Common phrases
+      'insyaallah', 'alhamdulillah', 'subhanallah',
+      'astaghfirullah', 'bismillah', 'mashaallah',
+      
+      // Malaysian Islamic context
+      'jakim', 'mufti', 'masjid', 'surau', 'ustaz',
+      'ustazah', 'madrasah', 'pondok', 'tahfiz'
+    ];
+
+    return islamicTerms.some(term => text.includes(term));
   }
 
   private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
