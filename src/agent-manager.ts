@@ -111,8 +111,23 @@ export class AgentManager {
           this.botUsername = ctx.me.username || '';
         }
 
-        const isMentioned = this.isBotMentioned(ctx.message.text);
-        const isCommand = ctx.message.text.startsWith('/');
+        // Check if message is a reply
+        const isReply = !!ctx.message.reply_to_message;
+        console.log('Is reply:', isReply);
+
+        // Get the full context of the question
+        let questionText = ctx.message.text;
+        if (isReply && ctx.message.reply_to_message?.text) {
+          // If it's a reply and mentions the bot, include the replied message
+          const isBotMentionedInReply = this.isBotMentioned(questionText);
+          if (isBotMentionedInReply) {
+            questionText = `${ctx.message.reply_to_message.text}\n\nFollow-up: ${questionText}`;
+            console.log('Processing as follow-up question:', questionText);
+          }
+        }
+
+        const isMentioned = this.isBotMentioned(questionText);
+        const isCommand = questionText.startsWith('/');
 
         console.log('Is mentioned:', isMentioned);
         console.log('Is command:', isCommand);
@@ -126,9 +141,9 @@ export class AgentManager {
         }
 
         // Handle mentions and natural language queries
-        if (isMentioned || this.isOpinionQuery(ctx.message.text)) {
+        if (isMentioned || this.isOpinionQuery(questionText)) {
           console.log('Processing message...');
-          const question = isMentioned ? this.removeBotMention(ctx.message.text) : ctx.message.text;
+          const question = isMentioned ? this.removeBotMention(questionText) : questionText;
           console.log('Cleaned question:', question);
 
           // If just mentioned without a question, prompt for one
@@ -447,19 +462,52 @@ export class AgentManager {
   }
 
   private isOpinionQuery(text: string): boolean {
-    const opinionTriggers = [
-      // English triggers
-      'what', 'how', 'why', 'opinion', 'think', 'view', 'explain',
-      'tell me about', 'what about', 'what is', 'what are',
-      // Malay triggers
-      'apa', 'bagaimana', 'kenapa', 'mengapa', 'pendapat',
-      'fikir', 'pandangan', 'terangkan', 'beritahu', 'macam mana',
-      'pasal', 'tentang', 'berkenaan', 'mengenai', 'tolong'
+    const lowerText = text.toLowerCase().trim();
+
+    // First, check if it's a simple interaction
+    if (this.isSimpleInteraction(text).isSimple) {
+      return false;
+    }
+
+    // Simple questions that don't need complex analysis
+    const simpleQuestions = [
+      // Bot-related
+      'are you there', 'you there', 'ada tak', 'ada ke',
+      'you ok', 'ok tak', 'working', 'can you hear',
+      // Basic greetings and acknowledgments
+      'good morning', 'good evening', 'good night',
+      'selamat pagi', 'selamat petang', 'selamat malam',
+      'bye', 'goodbye', 'see you', 'jumpa lagi',
+      'ok', 'okay', 'alright', 'baik', 'faham'
     ];
 
-    const lowerText = text.toLowerCase();
-    // If it's a question or contains opinion triggers
-    return lowerText.includes('?') || opinionTriggers.some(trigger => lowerText.includes(trigger));
+    if (simpleQuestions.some(q => lowerText.includes(q))) {
+      return false;
+    }
+
+    // Complex query triggers that need full analysis
+    const complexTriggers = [
+      // Islamic terms
+      'hukum', 'fatwa', 'syariah', 'shariah', 'fiqh', 'hadith',
+      'sunnah', 'quran', 'dalil', 'mazhab', 'ibadah', 'solat',
+      'zakat', 'puasa', 'halal', 'haram',
+      
+      // Question starters (English)
+      'what is the ruling', 'what does islam say', 'how do i',
+      'can you explain', 'tell me about', 'what are the',
+      'is it permissible', 'why do we', 'how should',
+      
+      // Question starters (Malay)
+      'apa hukum', 'boleh tak', 'macam mana nak',
+      'kenapa kita', 'mengapa perlu', 'adakah boleh',
+      'bagaimana cara', 'apa pandangan', 'boleh terangkan'
+    ];
+
+    // Check for complex triggers or question marks (indicating a detailed question)
+    const hasComplexTrigger = complexTriggers.some(trigger => lowerText.includes(trigger));
+    const isQuestion = lowerText.includes('?');
+
+    return hasComplexTrigger || isQuestion;
   }
 
   private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
