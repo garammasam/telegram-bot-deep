@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: telegram-bot-deep
+    env: docker
+    region: singapore # Choose the region closest to your users
+    plan: free # You can change this to a paid plan if needed
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TELEGRAM_TOKEN
+        sync: false # This will be set manually in Render dashboard
+      - key: DEEPSEEK_API_KEY
+        sync: false # This will be set manually in Render dashboard
+      - key: GROUP_IDS
+        sync: false # This will be set manually in Render dashboard
+    autoDeploy: true 
