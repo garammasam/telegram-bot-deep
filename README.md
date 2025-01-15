@@ -42,7 +42,7 @@ GROUP_IDS=comma,separated,group,ids
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/telegram-bot-deep.git
+git clone https://github.com/garammasam/telegram-bot-deep.git
 cd telegram-bot-deep
 ```
 
@@ -95,4 +95,4 @@ MIT
 
 ## Author
 
-Your Name 
+garammasam 
