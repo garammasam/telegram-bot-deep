@@ -491,12 +491,26 @@ export class AgentManager {
       };
     }
 
-    // Introduction requests
+    // Introduction requests - check these patterns first as they're more specific
     const introPatterns = [
-      'intro', 'introduce', 'who are you', 'siapa kamu', 'siapa anda',
-      'perkenal', 'kenalkan', 'intro sikit', 'cerita sikit'
+      'who are you', 'who r u', 'who are u', 'who r you',
+      'siapa kamu', 'siapa anda', 'siapa awak',
+      'intro', 'introduce', 'perkenal', 'kenalkan',
+      'intro sikit', 'cerita sikit', 'tell me about yourself',
+      'what is your name', 'apa nama', 'nama apa',
+      'what are you', 'apa kamu', 'apa awak'
     ];
-    if (introPatterns.some(pattern => lowerText.includes(pattern))) {
+    
+    // Use more flexible matching for intro patterns
+    if (introPatterns.some(pattern => {
+      // Exact match
+      if (lowerText === pattern) return true;
+      // Contains pattern
+      if (lowerText.includes(pattern)) return true;
+      // Special case for "who are you" variations
+      if (pattern.startsWith('who are') && lowerText.match(/\bwho\s+(?:are|r)\s*(?:you|u)\b/)) return true;
+      return false;
+    })) {
       return {
         isSimple: true,
         response: `Assalamualaikum! I am Tok Ayah, an Islamic knowledge assistant that specializes in Malaysian Islamic context. I can help you with:
@@ -513,8 +527,11 @@ Feel free to ask me any questions about Islamic matters, and I'll do my best to 
 
     // Bot capability questions
     const capabilityPatterns = [
-      'what can you do', 'apa you boleh buat', 'how to use', 'macam mana nak guna',
-      'cara guna', 'help', 'tolong', 'bantuan', 'command', 'arahan'
+      'what can you do', 'what do you do', 'apa you boleh buat',
+      'how to use', 'macam mana nak guna', 'cara guna',
+      'help', 'tolong', 'bantuan', 'command', 'arahan',
+      'how does this work', 'how do you work',
+      'what are your functions', 'apa fungsi'
     ];
     if (capabilityPatterns.some(pattern => lowerText.includes(pattern))) {
       return {
