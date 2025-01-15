@@ -544,12 +544,12 @@ export class AgentManager {
   private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
     const lowerText = text.toLowerCase().trim();
     
-    // Time-based greetings
-    const timeGreetings = {
-      morning: ['good morning', ,'morning,'selamat pagi', 'pagi'],
-      afternoon: ['good afternoon', 'selamat tengahari', 'tengahari'],
-      evening: ['good evening', 'selamat petang', 'petang'],
-      night: ['good night', 'selamat malam', 'malam']
+    // Time-based greetings with proper type definition
+    const timeGreetings: Record<string, string[]> = {
+      morning: ['good morning', 'morning', 'selamat pagi', 'pagi'],
+      afternoon: ['good afternoon', 'afternoon', 'selamat tengahari', 'tengahari'],
+      evening: ['good evening', 'evening', 'selamat petang', 'petang'],
+      night: ['good night', 'night', 'selamat malam', 'malam']
     };
 
     // Check time-based greetings first
