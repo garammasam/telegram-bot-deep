@@ -465,7 +465,8 @@ export class AgentManager {
     const lowerText = text.toLowerCase().trim();
 
     // First, check if it's a simple interaction
-    if (this.isSimpleInteraction(text).isSimple) {
+    const simpleCheck = this.isSimpleInteraction(text);
+    if (simpleCheck.isSimple) {
       return false;
     }
 
@@ -484,13 +485,9 @@ export class AgentManager {
       'where are you', 'bila', 'when', 'kenapa', 'why'
     ];
 
-    // Check if it's a simple pattern without Islamic context
+    // If it's a simple pattern, don't process it as an opinion query
     if (simplePatterns.some(pattern => lowerText.includes(pattern))) {
-      // Only return false if there are no Islamic terms in the question
-      const hasIslamicContext = this.hasIslamicContext(lowerText);
-      if (!hasIslamicContext) {
-        return false;
-      }
+      return false;
     }
 
     // Complex Islamic query triggers that need full analysis
@@ -547,7 +544,25 @@ export class AgentManager {
   private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
     const lowerText = text.toLowerCase().trim();
     
-    // Greetings
+    // Time-based greetings
+    const timeGreetings = {
+      morning: ['good morning', ,'morning,'selamat pagi', 'pagi'],
+      afternoon: ['good afternoon', 'selamat tengahari', 'tengahari'],
+      evening: ['good evening', 'selamat petang', 'petang'],
+      night: ['good night', 'selamat malam', 'malam']
+    };
+
+    // Check time-based greetings first
+    for (const [timeOfDay, greetings] of Object.entries(timeGreetings)) {
+      if (greetings.some(g => lowerText.includes(g))) {
+        return {
+          isSimple: true,
+          response: `Waalaikumussalam! ${timeOfDay === 'night' ? 'Good night!' : 'How can I help you today?'}`
+        };
+      }
+    }
+    
+    // Basic greetings
     const greetings = ['hi', 'hello', 'hey', 'assalamualaikum', 'salam'];
     if (greetings.some(greeting => lowerText === greeting)) {
       return {
@@ -636,6 +651,18 @@ For example:
 • "tok ayah, boleh terangkan tentang..."
 
 I'll analyze your question and provide a comprehensive response considering various Islamic perspectives.`
+      };
+    }
+
+    // Status checks
+    const statusChecks = [
+      'are you there', 'you there', 'ada tak', 'ada ke',
+      'you ok', 'ok tak', 'working', 'can you hear'
+    ];
+    if (statusChecks.some(check => lowerText.includes(check))) {
+      return {
+        isSimple: true,
+        response: 'Yes, I\'m here and ready to help! What would you like to know?'
       };
     }
 
