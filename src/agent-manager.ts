@@ -394,7 +394,7 @@ export class AgentManager {
     console.log('\n=== Starting All Agents ===');
     
     try {
-      // Initialize all agents
+      // Initialize all agents first
       for (const [name, info] of this.agents) {
         try {
           console.log(`Starting ${name} agent...`);
@@ -407,13 +407,44 @@ export class AgentManager {
         }
       }
 
-      // Start the single bot instance
+      // Start the bot with error handling and retries
       console.log('\nStarting bot...');
-      await this.bot.start({
-        onStart: () => {
-          console.log('✓ Bot started successfully');
-        },
-      });
+      try {
+        await this.bot.start({
+          onStart: () => {
+            console.log('✓ Bot started successfully');
+          },
+          drop_pending_updates: true, // Drop any pending updates to avoid conflicts
+          allowed_updates: ['message', 'callback_query'], // Only listen for specific updates
+          timeout: 30, // Reduce timeout for faster error detection
+        });
+      } catch (error: any) {
+        // Check if it's a conflict error (409)
+        if (error.error_code === 409) {
+          console.log('⚠️ Detected another bot instance running. Attempting to stop and restart...');
+          
+          // Wait a bit for the other instance to potentially clear
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Try to stop the bot if it's running
+          try {
+            await this.bot.stop();
+          } catch (stopError) {
+            console.error('Error stopping bot:', stopError);
+          }
+          
+          // Try to start again with cleared updates
+          console.log('Attempting to restart bot...');
+          await this.bot.start({
+            drop_pending_updates: true,
+            allowed_updates: ['message', 'callback_query'],
+            timeout: 30,
+          });
+        } else {
+          // If it's not a conflict error, rethrow
+          throw error;
+        }
+      }
 
       console.log('\n✓ All agents started successfully');
       this.setupShutdownHandlers();
@@ -428,9 +459,20 @@ export class AgentManager {
   public async stopAllAgents() {
     console.log('\n=== Stopping All Agents ===');
     try {
-      // Stop the single bot instance
-      await this.bot.stop();
-      console.log('✓ Bot stopped successfully');
+      // Stop the bot instance with a timeout
+      const stopTimeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Bot stop timeout')), 5000);
+      });
+      
+      try {
+        await Promise.race([
+          this.bot.stop(),
+          stopTimeout
+        ]);
+        console.log('✓ Bot stopped successfully');
+      } catch (error) {
+        console.warn('⚠️ Bot stop timed out or failed:', error);
+      }
 
       // Mark all agents as stopped
       for (const [name, info] of this.agents) {
@@ -438,7 +480,7 @@ export class AgentManager {
         console.log(`✓ ${name} agent marked as stopped`);
       }
     } catch (error) {
-      console.error('❌ Error stopping bot:', error);
+      console.error('❌ Error stopping agents:', error);
       throw error;
     }
   }
