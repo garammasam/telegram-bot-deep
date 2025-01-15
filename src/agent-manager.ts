@@ -575,17 +575,27 @@ export class AgentManager {
       }
     }
     
-    // Basic greetings
-    const greetings = ['hi', 'hello', 'hey', 'assalamualaikum', 'salam'];
-    if (greetings.some(greeting => lowerText === greeting)) {
+    // Basic greetings and common phrases
+    const greetings = [
+      'hi', 'hello', 'hey', 'assalamualaikum', 'salam',
+      // Malay greetings and common phrases
+      'apa khabar', 'apa kabar', 'apa macam',
+      'sihat?', 'sihat ke', 'sihat tak',
+      'macam mana', 'cemana', 'camne',
+      'hai', 'helo', 'oi', 'weh'
+    ];
+    if (greetings.some(greeting => lowerText.includes(greeting))) {
       return {
         isSimple: true,
-        response: 'Waalaikumussalam! How can I help you today?'
+        response: 'Waalaikumussalam! Alhamdulillah, I\'m doing well. How can I help you today?'
       };
     }
 
     // Thanks
-    const thanks = ['thank', 'thanks', 'terima kasih', 'tq'];
+    const thanks = [
+      'thank', 'thanks', 'terima kasih', 'tq', 'tenkiu',
+      'tq ye', 'thank you', 'thanks ye', 'terima kasih ye'
+    ];
     if (thanks.some(t => lowerText.includes(t))) {
       return {
         isSimple: true,
@@ -594,7 +604,8 @@ export class AgentManager {
     }
 
     // Test messages
-    if (['test', 'testing', 'check'].includes(lowerText)) {
+    const testMessages = ['test', 'testing', 'check', 'cuba', 'try'];
+    if (testMessages.some(t => lowerText === t)) {
       return {
         isSimple: true,
         response: 'Yes, I\'m here and working properly. How can I assist you?'
@@ -670,7 +681,8 @@ I'll analyze your question and provide a comprehensive response considering vari
     // Status checks
     const statusChecks = [
       'are you there', 'you there', 'ada tak', 'ada ke',
-      'you ok', 'ok tak', 'working', 'can you hear'
+      'you ok', 'ok tak', 'working', 'can you hear',
+      'masih ada', 'masih hidup', 'tok ayah ada', 'tok ayah?'
     ];
     if (statusChecks.some(check => lowerText.includes(check))) {
       return {
