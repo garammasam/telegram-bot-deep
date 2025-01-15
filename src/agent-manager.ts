@@ -491,6 +491,55 @@ export class AgentManager {
       };
     }
 
+    // Introduction requests
+    const introPatterns = [
+      'intro', 'introduce', 'who are you', 'siapa kamu', 'siapa anda',
+      'perkenal', 'kenalkan', 'intro sikit', 'cerita sikit'
+    ];
+    if (introPatterns.some(pattern => lowerText.includes(pattern))) {
+      return {
+        isSimple: true,
+        response: `Assalamualaikum! I am Tok Ayah, an Islamic knowledge assistant that specializes in Malaysian Islamic context. I can help you with:
+
+• Questions about Islamic rulings (fatwa)
+• Understanding different mazhab perspectives
+• Information about JAKIM guidelines
+• Malaysian Islamic practices and customs
+• Comprehensive analysis of Islamic topics
+
+Feel free to ask me any questions about Islamic matters, and I'll do my best to help you understand them from various authentic perspectives.`
+      };
+    }
+
+    // Bot capability questions
+    const capabilityPatterns = [
+      'what can you do', 'apa you boleh buat', 'how to use', 'macam mana nak guna',
+      'cara guna', 'help', 'tolong', 'bantuan', 'command', 'arahan'
+    ];
+    if (capabilityPatterns.some(pattern => lowerText.includes(pattern))) {
+      return {
+        isSimple: true,
+        response: `I can help you in several ways:
+
+1. Direct commands:
+/fatwa - Get fatwa rulings
+/mazhab - Learn about different mazhab views
+/jakim - Get JAKIM guidelines
+/malaysianfatwa - Access Malaysian fatwa decisions
+/ibadah - Learn about Islamic practices
+
+2. Natural conversations:
+Just mention "tok ayah" in your message and ask your question naturally in English or Malay.
+
+For example:
+• "tok ayah, apa hukum..."
+• "tok ayah, what is the ruling on..."
+• "tok ayah, boleh terangkan tentang..."
+
+I'll analyze your question and provide a comprehensive response considering various Islamic perspectives.`
+      };
+    }
+
     return { isSimple: false };
   }
 } 
