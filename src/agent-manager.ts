@@ -512,24 +512,19 @@ export class AgentManager {
       return false;
     }
 
-    // Simple questions and casual conversations that don't need complex analysis
-    const simplePatterns = [
-      // Greetings and time-based
-      'selamat', 'good', 'pagi', 'petang', 'malam', 'morning', 'evening', 'night',
-      // Status checks
-      'are you there', 'you there', 'ada tak', 'ada ke',
-      'you ok', 'ok tak', 'working', 'can you hear',
-      // Basic interactions
-      'bye', 'goodbye', 'see you', 'jumpa lagi',
-      'ok', 'okay', 'alright', 'baik', 'faham',
-      // Casual questions
-      'how are you', 'apa khabar', 'what are you doing', 'busy',
-      'where are you', 'bila', 'when', 'kenapa', 'why'
+    // Opinion-related words that should be checked with Islamic context
+    const opinionWords = [
+      // English
+      'opinion', 'view', 'think', 'about', 'regarding',
+      'what about', 'thoughts on', 'tell me about',
+      // Malay
+      'pendapat', 'pandangan', 'fikir', 'pasal', 'tentang',
+      'berkenaan', 'mengenai', 'apa kata'
     ];
 
-    // If it's a simple pattern, don't process it as an opinion query
-    if (simplePatterns.some(pattern => lowerText.includes(pattern))) {
-      return false;
+    // If it contains opinion words, only process if there's Islamic context
+    if (opinionWords.some(word => lowerText.includes(word))) {
+      return this.hasIslamicContext(lowerText);
     }
 
     // Complex Islamic query triggers that need full analysis
@@ -560,6 +555,7 @@ export class AgentManager {
   }
 
   private hasIslamicContext(text: string): boolean {
+    const lowerText = text.toLowerCase();
     const islamicTerms = [
       // Basic Islamic terms
       'islam', 'muslim', 'allah', 'nabi', 'rasul',
@@ -577,10 +573,16 @@ export class AgentManager {
       
       // Malaysian Islamic context
       'jakim', 'mufti', 'masjid', 'surau', 'ustaz',
-      'ustazah', 'madrasah', 'pondok', 'tahfiz'
+      'ustazah', 'madrasah', 'pondok', 'tahfiz',
+      
+      // Additional Islamic terms
+      'syahadah', 'syahadat', 'tauhid', 'aqidah',
+      'akhlak', 'adab', 'sunnah', 'wajib', 'makruh',
+      'mubah', 'syirik', 'kufur', 'iman', 'taqwa'
     ];
 
-    return islamicTerms.some(term => text.includes(term));
+    // Check if any Islamic term is present
+    return islamicTerms.some(term => lowerText.includes(term));
   }
 
   private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
