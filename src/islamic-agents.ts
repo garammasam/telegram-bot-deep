@@ -1,5 +1,5 @@
-import { Bot } from 'grammy';
-import OpenAI from 'openai';
+import { Bot, Context } from 'grammy';
+import axios from 'axios';
 
 interface AgentConfig {
   telegramToken: string;
@@ -14,17 +14,25 @@ interface AgentResponse {
   response: string;
 }
 
+interface DeepseekMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 abstract class BaseIslamicAgent {
   protected bot: Bot;
   protected config: AgentConfig;
-  protected ai: OpenAI;
+  protected deepseekClient;
 
   constructor(config: AgentConfig, bot: Bot) {
     this.config = config;
     this.bot = bot;
-    this.ai = new OpenAI({
-      apiKey: config.deepseekKey,
-      baseURL: 'https://api.deepseek.com/v1'
+    this.deepseekClient = axios.create({
+      baseURL: 'https://api.deepseek.com/v1',
+      headers: {
+        'Authorization': `Bearer ${config.deepseekKey}`,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -35,26 +43,21 @@ abstract class BaseIslamicAgent {
 
   public async shouldRespond(message: string): Promise<boolean> {
     try {
-      const response = await this.ai.chat.completions.create({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert in determining if a question matches specific Islamic topics.
+      const response = await this.createChatCompletion([
+        {
+          role: 'system',
+          content: `You are an expert in determining if a question matches specific Islamic topics.
 Given the following specialization:
 Topics: ${this.getTopics().join(', ')}
 Keywords: ${this.getKeywords().join(', ')}
 
 Respond with a number between 0 and 1 indicating how relevant the question is to these topics.
 Only respond with the number, nothing else.`
-          },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.1,
-        max_tokens: 10
-      });
+        },
+        { role: 'user', content: message }
+      ], 0.1, 10);
 
-      const relevanceScore = parseFloat(response.choices[0].message.content || '0');
+      const relevanceScore = parseFloat(response || '0');
       return relevanceScore >= this.config.responseThreshold;
     } catch (error) {
       console.error('Error checking relevance:', error);
@@ -62,7 +65,41 @@ Only respond with the number, nothing else.`
     }
   }
 
-  protected async replyWithFormattedResponse(ctx: any, response: string) {
+  protected async createChatCompletion(
+    messages: DeepseekMessage[],
+    temperature: number = 0.7,
+    max_tokens: number = 1000
+  ): Promise<string> {
+    try {
+      const { data } = await this.deepseekClient.post('/chat/completions', {
+        model: 'deepseek-chat',
+        messages,
+        temperature,
+        max_tokens
+      });
+
+      return data.choices[0]?.message?.content || '';
+    } catch (error) {
+      console.error('Error calling DeepSeek API:', error);
+      throw error;
+    }
+  }
+
+  public async generateResponse(question: string): Promise<string> {
+    try {
+      const response = await this.createChatCompletion([
+        { role: 'system', content: this.getSystemPrompt() },
+        { role: 'user', content: question }
+      ]);
+
+      return response || 'I apologize, but I could not generate a response at this time.';
+    } catch (error) {
+      console.error('Error generating response:', error);
+      return 'I apologize, but I encountered an error while processing your question. Please try again later.';
+    }
+  }
+
+  protected async replyWithFormattedResponse(ctx: Context, response: string) {
     try {
       const formattedResponse = this.formatResponseForTelegram(response);
       const chunks = this.splitResponse(formattedResponse);
@@ -144,31 +181,12 @@ Only respond with the number, nothing else.`
 
     return chunks;
   }
-
-  public async generateResponse(question: string): Promise<string> {
-    try {
-      const response = await this.ai.chat.completions.create({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: this.getSystemPrompt() },
-          { role: 'user', content: question }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-
-      return response.choices[0].message.content || 'I apologize, but I could not generate a response at this time.';
-    } catch (error) {
-      console.error('Error generating response:', error);
-      return 'I apologize, but I encountered an error while processing your question. Please try again later.';
-    }
-  }
 }
 
 export class FatwaAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
-    this.bot.command('fatwa', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('fatwa', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /fatwa command.');
@@ -230,8 +248,8 @@ Format your responses using these rules:
 
 export class MazhabAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
-    this.bot.command('mazhab', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('mazhab', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /mazhab command.');
@@ -291,8 +309,8 @@ Format your responses using these rules:
 
 export class JakimAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
-    this.bot.command('jakim', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('jakim', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /jakim command.');
@@ -353,8 +371,8 @@ Format your responses using these rules:
 
 export class MalaysianFatwaAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
-    this.bot.command('malaysianfatwa', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('malaysianfatwa', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /malaysianfatwa command.');
@@ -414,8 +432,8 @@ Format your responses using these rules:
 
 export class IbadhahAgent extends BaseIslamicAgent {
   async setupHandlers(): Promise<void> {
-    this.bot.command('ibadah', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('ibadah', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /ibadah command.');
@@ -482,8 +500,8 @@ export class OpinionAgent extends BaseIslamicAgent {
   }
 
   async setupHandlers(): Promise<void> {
-    this.bot.command('opinion', async (ctx) => {
-      const question = ctx.match;
+    this.bot.command('opinion', async (ctx: Context) => {
+      const question = ctx.match?.toString();
       
       if (!question) {
         await ctx.reply('Please provide a question after the /opinion command.');
@@ -544,7 +562,7 @@ export class OpinionAgent extends BaseIslamicAgent {
       // Get responses from all agents regardless of relevance
       console.log('Collecting responses from all specialized agents...');
       const agentResponses: AgentResponse[] = await Promise.all(
-        this.otherAgents.map(async (agent: BaseIslamicAgent, index: number) => {
+        this.otherAgents.map(async (agent, index) => {
           const agentType = this.getAgentType(index);
           console.log(`Requesting response from ${agentType}...`);
           const response = await agent.generateResponse(question);
@@ -559,12 +577,12 @@ export class OpinionAgent extends BaseIslamicAgent {
       console.log('All agent responses collected. Preparing synthesis...');
 
       // Combine all perspectives for the synthesis
-      const perspectives = agentResponses.map(({ type, response }: AgentResponse) => {
+      const perspectives = agentResponses.map(({ type, response }) => {
         // Clean up the response to remove any existing formatting
         const cleanedResponse = response
           .replace(/^###.*$/gm, '')  // Remove existing headers
           .split('\n')
-          .filter((line: string) => line.trim().length > 0)  // Remove empty lines
+          .filter(line => line.trim().length > 0)  // Remove empty lines
           .join('\n');
         
         return `${type}:\n${cleanedResponse}`;
@@ -573,16 +591,14 @@ export class OpinionAgent extends BaseIslamicAgent {
       console.log('Synthesizing comprehensive opinion...');
 
       // Use AI to synthesize a comprehensive opinion
-      const response = await this.ai.chat.completions.create({
-        model: 'deepseek-chat',
-        messages: [
-          { 
-            role: 'system', 
-            content: this.getSystemPrompt() 
-          },
-          {
-            role: 'user',
-            content: `Analyze this question from multiple Islamic perspectives and provide a comprehensive response:
+      const response = await this.createChatCompletion([
+        { 
+          role: 'system', 
+          content: this.getSystemPrompt() 
+        },
+        {
+          role: 'user',
+          content: `Analyze this question from multiple Islamic perspectives and provide a comprehensive response:
 
 Question: ${question}
 
@@ -591,14 +607,11 @@ Here are the different perspectives to consider:
 ${perspectives}
 
 Please synthesize these viewpoints into a well-structured response that addresses all aspects of the question.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      });
+        }
+      ], 0.7, 2000);
 
       console.log('Successfully generated comprehensive opinion');
-      return response.choices[0].message.content || 'I apologize, but I could not generate a comprehensive opinion at this time.';
+      return response || 'I apologize, but I could not generate a comprehensive opinion at this time.';
     } catch (error) {
       console.error('Error generating comprehensive opinion:', error);
       return 'I apologize, but I encountered an error while processing your question. Please try again later.';
