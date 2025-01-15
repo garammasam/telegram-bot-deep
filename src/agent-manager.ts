@@ -127,7 +127,7 @@ export class AgentManager {
 
         // Handle mentions and natural language queries
         if (isMentioned || this.isOpinionQuery(ctx.message.text)) {
-          console.log('Processing opinion query...');
+          console.log('Processing message...');
           const question = isMentioned ? this.removeBotMention(ctx.message.text) : ctx.message.text;
           console.log('Cleaned question:', question);
 
@@ -140,6 +140,18 @@ export class AgentManager {
             return;
           }
 
+          // Check if it's a simple interaction
+          const simpleCheck = this.isSimpleInteraction(question);
+          if (simpleCheck.isSimple && simpleCheck.response) {
+            console.log('Handling simple interaction');
+            await ctx.reply(simpleCheck.response, {
+              reply_to_message_id: ctx.message.message_id
+            });
+            return;
+          }
+
+          // Process as opinion query for complex questions
+          console.log('Processing opinion query...');
           const opinionAgent = this.agents.get('opinion')?.agent as OpinionAgent;
           if (opinionAgent) {
             try {
@@ -448,5 +460,37 @@ export class AgentManager {
     const lowerText = text.toLowerCase();
     // If it's a question or contains opinion triggers
     return lowerText.includes('?') || opinionTriggers.some(trigger => lowerText.includes(trigger));
+  }
+
+  private isSimpleInteraction(text: string): { isSimple: boolean; response?: string } {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Greetings
+    const greetings = ['hi', 'hello', 'hey', 'assalamualaikum', 'salam'];
+    if (greetings.some(greeting => lowerText === greeting)) {
+      return {
+        isSimple: true,
+        response: 'Waalaikumussalam! How can I help you today?'
+      };
+    }
+
+    // Thanks
+    const thanks = ['thank', 'thanks', 'terima kasih', 'tq'];
+    if (thanks.some(t => lowerText.includes(t))) {
+      return {
+        isSimple: true,
+        response: 'You\'re welcome! Feel free to ask if you have any questions.'
+      };
+    }
+
+    // Test messages
+    if (['test', 'testing', 'check'].includes(lowerText)) {
+      return {
+        isSimple: true,
+        response: 'Yes, I\'m here and working properly. How can I assist you?'
+      };
+    }
+
+    return { isSimple: false };
   }
 } 
